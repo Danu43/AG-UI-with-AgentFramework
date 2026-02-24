@@ -1,31 +1,43 @@
 export default function MessageRenderer({ msg }) {
-  // 1️⃣ Table rendering
-  if (msg?.type === "table") {
-    // Safety checks
-    if (!Array.isArray(msg.columns) || !Array.isArray(msg.rows)) {
-      return <div>⚠️ Invalid table data</div>;
-    }
+  if (!msg) return null;
 
+  // STEP 1: Normalize message (string → object)
+  let payload = msg;
+
+  if (typeof msg === "string") {
+    try {
+      payload = JSON.parse(msg);
+    } catch {
+      return <pre>{msg}</pre>;
+    }
+  }
+
+  if (typeof msg.content === "string") {
+    try {
+      payload = JSON.parse(msg.content);
+    } catch {
+      payload = msg.content;
+    }
+  }
+
+  // STEP 2: Render TABLE
+  if (payload?.type === "table") {
     return (
-      <div style={{ overflowX: "auto", marginTop: "10px" }}>
-        <table
-          border="1"
-          cellPadding="6"
-          style={{ borderCollapse: "collapse", width: "100%" }}
-        >
-          <thead style={{ background: "#f2f2f2" }}>
+      <div style={{ overflowX: "auto", marginTop: 12 }}>
+        <table border="1" cellPadding="6" cellSpacing="0">
+          <thead>
             <tr>
-              {msg.columns.map((col, idx) => (
-                <th key={idx}>{col}</th>
+              {payload.columns.map((col, i) => (
+                <th key={i}>{col}</th>
               ))}
             </tr>
           </thead>
 
           <tbody>
-            {msg.rows.map((row, rowIdx) => (
-              <tr key={rowIdx}>
-                {row.map((cell, cellIdx) => (
-                  <td key={cellIdx}>{cell}</td>
+            {payload.rows.map((row, rIdx) => (
+              <tr key={rIdx}>
+                {row.map((cell, cIdx) => (
+                  <td key={cIdx}>{cell}</td>
                 ))}
               </tr>
             ))}
@@ -35,15 +47,14 @@ export default function MessageRenderer({ msg }) {
     );
   }
 
-  // 2️⃣ Normal text rendering
-  if (typeof msg === "string") {
-    return <div>{msg}</div>;
+  // STEP 3: Render normal text
+  if (typeof payload === "string") {
+    return <div>{payload}</div>;
   }
 
-  if (msg?.content) {
-    return <div>{msg.content}</div>;
+  if (payload?.content) {
+    return <div>{payload.content}</div>;
   }
 
-  // 3️⃣ Fallback (debug-safe)
-  return <pre>{JSON.stringify(msg, null, 2)}</pre>;
+  return <pre>{JSON.stringify(payload, null, 2)}</pre>;
 }
